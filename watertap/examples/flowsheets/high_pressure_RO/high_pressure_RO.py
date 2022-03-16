@@ -45,10 +45,10 @@ import watertap.examples.flowsheets.high_pressure_RO.components.feed_cases as fe
 from watertap.core.util.infeasible import print_close_to_bounds, print_infeasible_bounds, print_infeasible_constraints
 
 
-def main():
+def main(case='seawater'):
 
     # build, set, and initialize
-    m = build()
+    m = build(case=case)
     specify_model(m)
     initialize_model(m)
 
@@ -65,16 +65,11 @@ def main():
     display_report(m)
     display_results(m)
 
-    # optimize and display
-    m.fs.product_recovery = 0.75
-    solve(m)
-    print('\n***---Optimization results 2---***')
-    display_report(m)
-    display_results(m)
 
 def build(case='seawater'):
     # flowsheet set up
     m = ConcreteModel()
+    m.case = case
     m.fs = FlowsheetBlock(default={'dynamic': False})
     m.fs.prop_desal = props.SeawaterParameterBlock()
 
@@ -209,11 +204,17 @@ def specify_model(m):
 
     # pump 1, 2 degrees of freedom (efficiency and outlet pressure)
     m.fs.P1.efficiency_pump.fix(0.80)  # pump efficiency [-]
-    m.fs.P1.control_volume.properties_out[0].pressure.fix(65e5)
+    if m.case == 'seawater':
+        m.fs.P1.control_volume.properties_out[0].pressure.fix(65e5)
+    else:
+        m.fs.P1.control_volume.properties_out[0].pressure.fix(30e5)
 
     # pump 2, 2 degrees of freedom (efficiency and outlet pressure)
     m.fs.P2.efficiency_pump.fix(0.80)  # pump efficiency [-]
-    m.fs.P2.control_volume.properties_out[0].pressure.fix(100e5)
+    if m.case == 'seawater':
+        m.fs.P2.control_volume.properties_out[0].pressure.fix(100e5)
+    else:
+        m.fs.P2.control_volume.properties_out[0].pressure.fix(65e5)
 
     # RO 1, 7 degrees of freedom
     m.fs.RO1.A_comp.fix(4.2e-12)  # membrane water permeability coefficient [m/s-Pa]
@@ -221,8 +222,12 @@ def specify_model(m):
     m.fs.RO1.channel_height.fix(1e-3)  # channel height in membrane stage [m]
     m.fs.RO1.spacer_porosity.fix(0.97)  # spacer porosity in membrane stage [-]
     m.fs.RO1.permeate.pressure[0].fix(101325)  # atmospheric pressure [Pa]
-    m.fs.RO1.area.fix(100)
-    m.fs.RO1.width.fix(10)  # stage width [m]
+    if m.case == 'seawater':
+        m.fs.RO1.area.fix(100)
+        m.fs.RO1.width.fix(10)  # stage width [m]
+    else:
+        m.fs.RO1.area.fix(30)
+        m.fs.RO1.width.fix(3)  # stage width [m]
 
     # RO 2, 7 degrees of freedom
     m.fs.RO2.A_comp.fix(4.2e-12)  # membrane water permeability coefficient [m/s-Pa]
@@ -230,8 +235,13 @@ def specify_model(m):
     m.fs.RO2.channel_height.fix(1e-3)  # channel height in membrane stage [m]
     m.fs.RO2.spacer_porosity.fix(0.97)  # spacer porosity in membrane stage [-]
     # m.fs.RO2.permeate.pressure[0].fix(101325)  # atmospheric pressure [Pa]  # mixer has equality constraint
-    m.fs.RO2.area.fix(50)
-    m.fs.RO2.width.fix(10)  # stage width [m]
+    if m.case == 'seawater':
+        m.fs.RO2.area.fix(50)
+        m.fs.RO2.width.fix(10)  # stage width [m]
+    else:
+        m.fs.RO2.area.fix(30)
+        m.fs.RO2.width.fix(3)  # stage width [m]
+
 
     # check degrees of freedom
     if degrees_of_freedom(m) != 0:
@@ -286,9 +296,11 @@ def set_up_optimization(m):
     m.fs.P1.control_volume.properties_out[0].pressure.unfix()
     m.fs.P1.control_volume.properties_out[0].pressure.setlb(10e5)
     m.fs.P1.control_volume.properties_out[0].pressure.setub(85e5)
+    m.fs.P1.control_volume.properties_out[0].pressure.setlb(10e5)
+    m.fs.P1.control_volume.properties_out[0].pressure.setub(85e5)
     m.fs.P1.deltaP.setlb(0)
     m.fs.P2.control_volume.properties_out[0].pressure.unfix()
-    m.fs.P2.control_volume.properties_out[0].pressure.setlb(50e5)
+    m.fs.P2.control_volume.properties_out[0].pressure.setlb(10e5)
     m.fs.P2.control_volume.properties_out[0].pressure.setub(200e5)
     m.fs.P2.deltaP.setlb(0)
 
@@ -376,3 +388,6 @@ def display_report(m):
 
 if __name__ == "__main__":
     main()
+    # main(case='brackish_1')
+    # main(case='brackish_2')
+

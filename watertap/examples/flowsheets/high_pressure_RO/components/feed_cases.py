@@ -23,7 +23,7 @@ def build_prop(m, case='seawater'):
     Builds a property package for the specified case.
     cases include: 'seawater'
     """
-    if case == 'seawater':
+    if case in ['seawater', 'brackish_1', 'brackish_2']:
         ion_list = ['NAION', 'KION', 'MGION', 'CAION', 'CLION', 'SO4ION', 'HCO3ION']
         m.fs.prop_feed = ion_prop_pack.PropParameterBlock(
             default={'ion_list': ion_list})
@@ -57,14 +57,34 @@ def specify_feed(sb, case='seawater'):
     sb.temperature.fix(298.15)
     sb.flow_vol.fix(1e-3)
 
-    if case == 'seawater':
+    if case == 'seawater':  # Lienhard and Lenntech
         conc_dict = {'NAION': 10.556,
                      'KION': 0.380,
                      'CAION': 0.400,
                      'MGION': 1.262,
-                     'CLION': 18.980,
+                     'CLION': 18.973,
                      'SO4ION': 2.649,
-                     'HCO3ION': 0.129}
+                     'HCO3ION': 0.140}
+        for (j, val) in conc_dict.items():
+            sb.conc_mass_comp[j].fix(val)
+    elif case == 'brackish_1':  # Lienhard
+        conc_dict = {'NAION': 0.739,
+                     'KION': 0.009,
+                     'CAION': 0.258,
+                     'MGION': 0.090,
+                     'CLION': 0.896,
+                     'SO4ION': 1.011,
+                     'HCO3ION': 0.385}
+        for (j, val) in conc_dict.items():
+            sb.conc_mass_comp[j].fix(val)
+    elif case == 'brackish_2':  # WT3
+        conc_dict = {'NAION': 0.77,
+                     'KION': 0.016,
+                     'CAION': 0.13,
+                     'MGION': 0.03,
+                     'CLION': 1.18,
+                     'SO4ION': 0.23,
+                     'HCO3ION': 0.292}
         for (j, val) in conc_dict.items():
             sb.conc_mass_comp[j].fix(val)
     else:
