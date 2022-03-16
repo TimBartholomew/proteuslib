@@ -13,30 +13,33 @@ def run_analysis(case, nx, interp_nan_outputs=False):
     outputs = {}
     optimize_kwargs = {'check_termination': False}
 
+    # build, set, and initialize
+    m = high_pressure_RO.build(case=case)
+    high_pressure_RO.specify_model(m)
+    high_pressure_RO.initialize_model(m)
+    # simulate
+    high_pressure_RO.solve(m)
+    # set up optimize
+    high_pressure_RO.set_up_optimization(m)
+    high_pressure_RO.optimize(m)
+
+    # set up parameter sweep
     if case == 'seawater':
-        # build, set, and initialize
-        m = high_pressure_RO.build(case=case)
-        high_pressure_RO.specify_model(m)
-        high_pressure_RO.initialize_model(m)
-        # simulate
-        high_pressure_RO.solve(m)
-        # set up optimize
-        high_pressure_RO.set_up_optimization(m)
-        high_pressure_RO.optimize(m)
-
-        # set up parameter sweep
-        sweep_params['System Recovery'] = LinearSample(m.fs.product_recovery, 0.3, 0.85, nx)
-
-        for j in m.fs.disposal.properties[0].conc_mass_comp:
-            outputs[j] = m.fs.disposal.properties[0].conc_mass_comp[j]
-
-        outputs['LCOW'] = m.fs.costing.LCOW
-
-        output_filename = 'output/oli_cases/seawater.csv'
-
-        opt_function = high_pressure_RO.optimize
+        lb = 0.3
+        ub = 0.85
     else:
-        raise ValueError('case %s not recognized.' % case)
+        lb = 0.3
+        ub = 0.95
+    sweep_params['System Recovery'] = LinearSample(m.fs.product_recovery, lb, ub, nx)
+
+    for j in m.fs.disposal.properties[0].conc_mass_comp:
+        outputs[j] = m.fs.disposal.properties[0].conc_mass_comp[j]
+
+    outputs['LCOW'] = m.fs.costing.LCOW
+
+    output_filename = 'output/oli_cases/'+case+'.csv'
+
+    opt_function = high_pressure_RO.optimize
 
 
     global_results = parameter_sweep(m, sweep_params, outputs, csv_results_file=output_filename,
@@ -54,7 +57,9 @@ if __name__ == "__main__":
     comm, rank, num_procs = _init_mpi()
 
     # analysis
-    case = 'seawater'
+    # case = 'seawater'
+    # case = 'brackish_1'
+    case = 'brackish_2'
     nx = 30
 
     tic = time.time()
