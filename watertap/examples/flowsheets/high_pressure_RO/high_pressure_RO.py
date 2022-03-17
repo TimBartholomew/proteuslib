@@ -12,6 +12,7 @@
 ###############################################################################
 from pyomo.environ import (ConcreteModel,
                            value,
+                           Var,
                            Constraint,
                            Expression,
                            Objective,
@@ -64,6 +65,9 @@ def main(case='seawater'):
     print('\n***---Optimization results---***')
     display_report(m)
     display_results(m)
+
+    print(m.fs.product_recovery, type(m.fs.product_recovery))
+    m.fs.product_recovery.display()
 
 
 def build(case='seawater'):
@@ -321,7 +325,10 @@ def set_up_optimization(m):
     # additional specifications
     m.fs.maximum_product_salinity = Param(initialize=1000e-6, mutable=True)  # product TDS mass fraction [-]
     m.fs.minimum_water_flux = Param(initialize=1./3600., mutable=True)  # minimum water flux [kg/m2-s]
-    m.fs.product_recovery = Param(initialize=0.73, mutable=True)
+    m.fs.product_recovery = Var(initialize=0.73,
+                                bounds=(0, 1),
+                                units=pyunits.dimensionless)
+    m.fs.product_recovery.fix()
 
     # additional constraints
     m.fs.eq_product_quality = Constraint(
@@ -363,7 +370,7 @@ def display_results(m):
 
     print('Volumetric recovery: %.1f%%' % (value(m.fs.product.properties[0].flow_vol
                                                  / m.fs.feed.properties[0].flow_vol) * 100))
-    print('Energy Consumption: %.1f kWh/m3' % value(m.fs.specific_energy_consumption))
+    print('Energy Consumption: %.2f kWh/m3' % value(m.fs.specific_energy_consumption))
     print('Levelized cost of water: %.2f $/m3' % value(m.fs.costing.LCOW))
 
     print('---decision variables---')
