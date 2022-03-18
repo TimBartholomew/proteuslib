@@ -35,9 +35,9 @@ import idaes.logger as idaeslog
 
 import watertap.examples.flowsheets.high_pressure_RO.high_pressure_RO as high_pressure_RO
 
-from idaes.surrogate.pysmo import polynomial_regression
+from idaes.surrogate.pysmo import polynomial_regression, radial_basis_function
 
-def main(case='seawater'):
+def main(case='seawater', surrogate_type='polynomial'):
     m = high_pressure_RO.build(case=case)
     high_pressure_RO.specify_model(m)
     high_pressure_RO.initialize_model(m)
@@ -55,7 +55,7 @@ def main(case='seawater'):
 
     print('\n***---Optimization results with scaling surrogate---***')
     # add scaling surrogate
-    add_scaling_surrogate(m)
+    add_scaling_surrogate(m, surrogate_type=surrogate_type)
     m.fs.product_recovery.unfix()
     m.fs.gypsum_scaling_index.fix(1)
     high_pressure_RO.optimize(m)
@@ -63,11 +63,17 @@ def main(case='seawater'):
     print('---scaling index---')
     print('Gypsum scaling index: %.2f' % m.fs.gypsum_scaling_index.value)
 
-def add_scaling_surrogate(m):
+def add_scaling_surrogate(m, surrogate_type='polynomial'):
     dir_path = r'C:\Users\timvb\Box\WaterTAP (protected by NDA)\nawi (NDA protected)\OLI (protected data)\feed_cases\\'
-    file_name = m.case + '_gypsum_surrogate.pickle'
-    gypsum_scaling_index_surrogate = polynomial_regression.PolynomialRegression.pickle_load(
-        dir_path + file_name)
+    if surrogate_type == 'polynomial':
+        file_name = m.case + '_gypsum_surrogate.pickle'
+        gypsum_scaling_index_surrogate = polynomial_regression.PolynomialRegression.pickle_load(
+            dir_path + file_name)
+    elif surrogate_type == 'rbf':
+        file_name = m.case + '_gypsum_surrogate_interpolating.pickle'
+        gypsum_scaling_index_surrogate = radial_basis_function.RadialBasisFunctions.pickle_load(
+            dir_path + file_name)
+
     m.fs.gypsum_scaling_index = Var(initialize=1,
                                     bounds=(0, None),
                                     units=pyunits.dimensionless)
@@ -85,6 +91,8 @@ def add_scaling_surrogate(m):
     )
 
 if __name__ == "__main__":
-    main(case='seawater')
+    case_list = ['seawater', 'brackish_1', 'brackish_2']
+    surrogate_type_list = ['polynomial', 'rbf']
+    main(case=case_list[0], surrogate_type=surrogate_type_list[1])
     # main(case='brackish_1')
     # main(case='brackish_2')
