@@ -94,5 +94,3 @@ if __name__ == "__main__":
     case_list = ['seawater', 'brackish_1', 'brackish_2']
     surrogate_type_list = ['polynomial', 'rbf']
     main(case=case_list[0], surrogate_type=surrogate_type_list[1])
-    # main(case='brackish_1')
-    # main(case='brackish_2')
