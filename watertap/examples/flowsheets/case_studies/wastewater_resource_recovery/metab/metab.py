@@ -68,31 +68,31 @@ def build():
 
     m.fs = FlowsheetBlock(default={"dynamic": False})
     m.fs.prop = prop_ZO.WaterParameterBlock(
-        default={"solute_list": ["cod", "H2", "CH4"]}
+        default={"solute_list": ["cod", "hydrogen", "methane"]}
     )
 
     # unit models
     m.fs.feed = FeedZO(default={"property_package": m.fs.prop})
-    m.fs.metab_H2 = MetabZO(default={
+    m.fs.metab_hydrogen = MetabZO(default={
         "property_package": m.fs.prop,
         "database": m.db,
-        "process_subtype": "H2"},
+        "process_subtype": "hydrogen"},
     )
-    m.fs.metab_CH4 = MetabZO(default={
+    m.fs.metab_methane = MetabZO(default={
         "property_package": m.fs.prop,
         "database": m.db,
-        "process_subtype": "CH4"},
+        "process_subtype": "methane"},
     )
-    m.fs.product_H2 = Product(default={"property_package": m.fs.prop})
-    m.fs.product_CH4 = Product(default={"property_package": m.fs.prop})
+    m.fs.product_hydrogen = Product(default={"property_package": m.fs.prop})
+    m.fs.product_methane = Product(default={"property_package": m.fs.prop})
     m.fs.product_H2O = Product(default={"property_package": m.fs.prop})
 
     # connections
-    m.fs.s01 = Arc(source=m.fs.feed.outlet, destination=m.fs.metab_H2.inlet)
-    m.fs.s02 = Arc(source=m.fs.metab_H2.treated, destination=m.fs.metab_CH4.inlet)
-    m.fs.s03 = Arc(source=m.fs.metab_H2.byproduct, destination=m.fs.product_H2.inlet)
-    m.fs.s04 = Arc(source=m.fs.metab_CH4.byproduct, destination=m.fs.product_CH4.inlet)
-    m.fs.s05 = Arc(source=m.fs.metab_CH4.treated, destination=m.fs.product_H2O.inlet)
+    m.fs.s01 = Arc(source=m.fs.feed.outlet, destination=m.fs.metab_hydrogen.inlet)
+    m.fs.s02 = Arc(source=m.fs.metab_hydrogen.treated, destination=m.fs.metab_methane.inlet)
+    m.fs.s03 = Arc(source=m.fs.metab_hydrogen.byproduct, destination=m.fs.product_hydrogen.inlet)
+    m.fs.s04 = Arc(source=m.fs.metab_methane.byproduct, destination=m.fs.product_methane.inlet)
+    m.fs.s05 = Arc(source=m.fs.metab_methane.treated, destination=m.fs.product_H2O.inlet)
     TransformationFactory("network.expand_arcs").apply_to(m)
 
     # scaling
@@ -117,15 +117,15 @@ def set_operating_conditions(m):
 
     m.fs.feed.properties[0].flow_mass_comp["H2O"].fix(1)
     m.fs.feed.properties[0].flow_mass_comp["cod"].fix(0.01)
-    m.fs.feed.properties[0].flow_mass_comp["H2"].fix(1e-8)
-    m.fs.feed.properties[0].flow_mass_comp["CH4"].fix(1e-8)
+    m.fs.feed.properties[0].flow_mass_comp["hydrogen"].fix(1e-8)
+    m.fs.feed.properties[0].flow_mass_comp["methane"].fix(1e-8)
     # solve(m.fs.feed)
 
-    # metab_H2
-    m.fs.metab_H2.load_parameters_from_database(use_default_removal=True)
+    # metab_hydrogen
+    m.fs.metab_hydrogen.load_parameters_from_database(use_default_removal=True)
 
-    # metab_CH4
-    m.fs.metab_CH4.load_parameters_from_database(use_default_removal=True)
+    # metab_methane
+    m.fs.metab_methane.load_parameters_from_database(use_default_removal=True)
 
 
 def initialize_system(m):
@@ -147,8 +147,8 @@ def solve(blk, solver=None, tee=False, check_termination=True):
 def display_results(m):
     unit_list = [
         "feed",
-        "metab_H2",
-        "metab_CH4"
+        "metab_hydrogen",
+        "metab_methane"
     ]
     for u in unit_list:
         m.fs.component(u).report()
@@ -164,8 +164,8 @@ def add_costing(m):
     )
     # typing aid
     costing_kwargs = {"default": {"flowsheet_costing_block": m.fs.costing}}
-    m.fs.metab_H2.costing = UnitModelCostingBlock(**costing_kwargs)
-    m.fs.metab_CH4.costing = UnitModelCostingBlock(**costing_kwargs)
+    m.fs.metab_hydrogen.costing = UnitModelCostingBlock(**costing_kwargs)
+    m.fs.metab_methane.costing = UnitModelCostingBlock(**costing_kwargs)
 
     m.fs.costing.cost_process()
     m.fs.costing.add_electricity_intensity(m.fs.product_H2O.properties[0].flow_vol)
