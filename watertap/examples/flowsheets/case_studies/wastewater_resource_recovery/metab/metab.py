@@ -104,22 +104,14 @@ def build():
 def set_operating_conditions(m):
     # ---specifications---
     # feed
-    # flow_vol = 0.9224 * pyunits.m**3 / pyunits.s
-    # conc_mass_tds = 0.63 * pyunits.kg / pyunits.m**3
-    # conc_mass_tss = 0.006525 * pyunits.kg / pyunits.m**3
-    # conc_mass_toc = 0.004 * pyunits.kg / pyunits.m**3
-    #
-    # m.fs.feed.flow_vol[0].fix(flow_vol)
-    # m.fs.feed.conc_mass_comp[0, "tds"].fix(conc_mass_tds)
-    # m.fs.feed.conc_mass_comp[0, "tss"].fix(conc_mass_tss)
-    # m.fs.feed.conc_mass_comp[0, "toc"].fix(conc_mass_toc)
-    # solve(m.fs.feed)
+    flow_vol = 3.286e-4 * pyunits.m**3 / pyunits.s
+    conc_mass_cod = 6.76 * pyunits.kg / pyunits.m**3
 
-    m.fs.feed.properties[0].flow_mass_comp["H2O"].fix(1)
-    m.fs.feed.properties[0].flow_mass_comp["cod"].fix(0.01)
+    m.fs.feed.flow_vol[0].fix(flow_vol)
+    m.fs.feed.conc_mass_comp[0, "cod"].fix(conc_mass_cod)
     m.fs.feed.properties[0].flow_mass_comp["hydrogen"].fix(1e-8)
     m.fs.feed.properties[0].flow_mass_comp["methane"].fix(1e-8)
-    # solve(m.fs.feed)
+    solve(m.fs.feed)
 
     # metab_hydrogen
     m.fs.metab_hydrogen.load_parameters_from_database(use_default_removal=True)
