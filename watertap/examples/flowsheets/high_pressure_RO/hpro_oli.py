@@ -33,7 +33,7 @@ from idaes.generic_models.unit_models.mixer import MomentumMixingType
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
 
-import watertap.examples.flowsheets.high_pressure_RO.high_pressure_RO as high_pressure_RO
+import watertap.examples.flowsheets.high_pressure_RO.hpro as high_pressure_RO
 
 from idaes.surrogate.pysmo import polynomial_regression, radial_basis_function
 
@@ -64,7 +64,7 @@ def main(case='seawater', surrogate_type='polynomial'):
     print('Gypsum scaling index: %.2f' % m.fs.gypsum_scaling_index.value)
 
 def add_scaling_surrogate(m, surrogate_type='polynomial'):
-    dir_path = r'C:\Users\timvb\Box\WaterTAP (protected by NDA)\nawi (NDA protected)\OLI (protected data)\feed_cases\\'
+    dir_path = r'C:\Users\timvb\Box\WaterTAP (protected by NDA)\nawi (NDA protected)\WaterTAP-OLI (protected data)\Workspace\feed_cases\\'
     if surrogate_type == 'polynomial':
         file_name = m.case + '_gypsum_surrogate.pickle'
         gypsum_scaling_index_surrogate = polynomial_regression.PolynomialRegression.pickle_load(

@@ -5,7 +5,7 @@ import time
 from idaes.core.util import get_solver
 from pyomo.environ import Expression, Param, Constraint
 from watertap.tools.parameter_sweep import _init_mpi, LinearSample, parameter_sweep
-import watertap.examples.flowsheets.high_pressure_RO.high_pressure_RO as high_pressure_RO
+import watertap.examples.flowsheets.high_pressure_RO.hpro as high_pressure_RO
 
 
 def run_analysis(case, nx, interp_nan_outputs=False):

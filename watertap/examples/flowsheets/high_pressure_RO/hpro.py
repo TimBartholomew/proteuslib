@@ -67,9 +67,6 @@ def main(case='seawater'):
     display_report(m)
     display_results(m)
 
-    print(m.fs.product_recovery, type(m.fs.product_recovery))
-    m.fs.product_recovery.display()
-
 
 def build(case='seawater'):
     # flowsheet set up
