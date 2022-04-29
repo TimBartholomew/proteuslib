@@ -5,13 +5,13 @@ import time
 from idaes.core.util import get_solver
 from pyomo.environ import Expression, Param, Constraint
 from watertap.tools.parameter_sweep import _init_mpi, LinearSample, parameter_sweep
-import watertap.examples.flowsheets.high_pressure_RO.hpro_only.hpro as high_pressure_RO
+import watertap.examples.flowsheets.high_pressure_RO.hpro_only.flowsheet as high_pressure_RO
 
 
 def run_analysis(case, nx, interp_nan_outputs=False):
     sweep_params = {}
     outputs = {}
-    optimize_kwargs = {'check_termination': False}
+    optimize_kwargs = {"check_termination": False}
 
     # build, set, and initialize
     m = high_pressure_RO.build(case=case)
@@ -24,29 +24,33 @@ def run_analysis(case, nx, interp_nan_outputs=False):
     high_pressure_RO.optimize(m)
 
     # set up parameter sweep
-    if case == 'seawater':
+    if case == "seawater":
         lb = 0.3
         ub = 0.85
     else:
         lb = 0.3
         ub = 0.95
-    sweep_params['System Recovery'] = LinearSample(m.fs.product_recovery, lb, ub, nx)
+    sweep_params["System Recovery"] = LinearSample(m.fs.product_recovery, lb, ub, nx)
 
     for j in m.fs.disposal.properties[0].conc_mass_comp:
         outputs[j] = m.fs.disposal.properties[0].conc_mass_comp[j]
 
-    outputs['LCOW'] = m.fs.costing.LCOW
+    outputs["LCOW"] = m.fs.costing.LCOW
 
-    output_filename = 'output/oli_cases/'+case+'.csv'
+    output_filename = "output/oli_cases/" + case + ".csv"
 
     opt_function = high_pressure_RO.optimize
 
-
-    global_results = parameter_sweep(m, sweep_params, outputs, csv_results_file=output_filename,
-                                     optimize_function=opt_function,
-                                     optimize_kwargs=optimize_kwargs,
-                                     debugging_data_dir=os.path.split(output_filename)[0]+'/local',
-                                     interpolate_nan_outputs=interp_nan_outputs)
+    global_results = parameter_sweep(
+        m,
+        sweep_params,
+        outputs,
+        csv_results_file=output_filename,
+        optimize_function=opt_function,
+        optimize_kwargs=optimize_kwargs,
+        debugging_data_dir=os.path.split(output_filename)[0] + "/local",
+        interpolate_nan_outputs=interp_nan_outputs,
+    )
 
     return global_results, sweep_params
 
@@ -59,7 +63,7 @@ if __name__ == "__main__":
     # analysis
     # case = 'seawater'
     # case = 'brackish_1'
-    case = 'brackish_2'
+    case = "brackish_2"
     nx = 30
 
     tic = time.time()
@@ -73,6 +77,9 @@ if __name__ == "__main__":
         for k, v in sweep_params.items():
             total_samples *= v.num_samples
 
-        print('Finished case = %s.' % case)
-        print('Processed %d swept parameters comprising %d total points.' % (len(sweep_params), total_samples))
-        print('Elapsed time = %.1f s.' % (toc-tic))
+        print("Finished case = %s." % case)
+        print(
+            "Processed %d swept parameters comprising %d total points."
+            % (len(sweep_params), total_samples)
+        )
+        print("Elapsed time = %.1f s." % (toc - tic))
