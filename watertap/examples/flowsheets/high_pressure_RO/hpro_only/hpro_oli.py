@@ -11,29 +11,19 @@
 #
 ###############################################################################
 from pyomo.environ import (ConcreteModel,
-                           value,
                            Constraint,
                            Expression,
-                           Objective,
                            Param,
                            Var,
-                           TransformationFactory,
                            units as pyunits,
                            assert_optimal_termination)
-from pyomo.network import Arc
 from idaes.core import FlowsheetBlock
-from idaes.core.util import get_solver
 from idaes.core.util.model_statistics import degrees_of_freedom
-from idaes.core.util.initialization import (solve_indexed_blocks,
-                                            propagate_state,
-                                            fix_state_vars,
-                                            revert_state_vars)
-from idaes.generic_models.unit_models import Product, Feed, Mixer, Translator
 from idaes.generic_models.unit_models.mixer import MomentumMixingType
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
 
-import watertap.examples.flowsheets.high_pressure_RO.hpro as high_pressure_RO
+import watertap.examples.flowsheets.high_pressure_RO.hpro_only.hpro as high_pressure_RO
 
 from idaes.surrogate.pysmo import polynomial_regression, radial_basis_function
 
