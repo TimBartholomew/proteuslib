@@ -234,7 +234,7 @@ class PropStateBlockData(StateBlockData):
             doc='Volumetric flow rate')
 
         self.conc_mass_comp = Var(
-            self.params.solute_set,
+            self.params.component_list,
             initialize=1,
             bounds=(1e-6, 1e6),
             units=pyunits.kg/pyunits.m ** 3,
@@ -260,6 +260,34 @@ class PropStateBlockData(StateBlockData):
                 "conc_mass_comp": self.conc_mass_comp,
                 "temperature": self.temperature,
                 "pressure": self.pressure}
+
+    # General Methods
+    # NOTE: For scaling in the control volume to work properly, these methods must
+    # return a pyomo Var or Expression
+
+    def get_material_flow_terms(self, p, j):
+        """Create material flow terms for control volume."""
+        return self.flow_vol * self.conc_mass_comp[j]
+
+    # def get_enthalpy_flow_terms(self, p):
+    #     """Create enthalpy flow terms."""
+    #     return self.enth_flow
+
+    # TODO: make property package compatible with dynamics
+    # def get_material_density_terms(self, p, j):
+    #     """Create material density terms."""
+
+    # def get_enthalpy_density_terms(self, p):
+    #     """Create enthalpy density terms."""
+
+    def default_material_balance_type(self):
+        return MaterialBalanceType.componentTotal
+
+    def default_energy_balance_type(self):
+        return EnergyBalanceType.enthalpyTotal
+
+    def get_material_flow_basis(b):
+        return MaterialFlowBasis.mass
 
     # -----------------------------------------------------------------------------
     # Scaling methods
