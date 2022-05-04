@@ -5,19 +5,22 @@ from pyomo.util.check_units import assert_units_consistent
 from watertap.core.util.initialization import assert_degrees_of_freedom
 import ion_prop_pack as props
 
+
 def main():
     # create model, flowsheet
     m = ConcreteModel()
     m.fs = FlowsheetBlock(default={"dynamic": False})
     # attach property package
     m.fs.properties = props.PropParameterBlock(
-        default={'ion_list': ['Na_+', 'Cl_-', 'Mg_2+'],
-                 'mw_data': {
-                     'H2O': 18.0e-3,
-                     'Na_+': 23.0e-3,
-                     'Cl_-': 35.5e-3,
-                     'Mg_2+': 24.3e-3}
-                 }
+        default={
+            "ion_list": ["Na_+", "Cl_-", "Mg_2+"],
+            "mw_data": {
+                "H2O": 18.0e-3,
+                "Na_+": 23.0e-3,
+                "Cl_-": 35.5e-3,
+                "Mg_2+": 24.3e-3,
+            },
+        }
     )
     # build a state block, must specify a time which by convention for steady state models is just 0
     m.fs.stream = m.fs.properties.build_state_block([0], default={})

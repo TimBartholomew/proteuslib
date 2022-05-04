@@ -35,7 +35,10 @@ from idaes.core.util.initialization import (
 )
 from idaes.generic_models.costing import UnitModelCostingBlock
 from idaes.generic_models.unit_models import Product, Feed, Mixer, Translator, Separator
-from idaes.generic_models.unit_models.separator import SplittingType, EnergySplittingType
+from idaes.generic_models.unit_models.separator import (
+    SplittingType,
+    EnergySplittingType,
+)
 from idaes.generic_models.unit_models.mixer import MomentumMixingType
 import idaes.core.util.scaling as iscale
 import idaes.logger as idaeslog
@@ -202,7 +205,9 @@ def build(case="seawater"):
     m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="SO4ION")
     m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="HCO3ION")
     m.fs.prop_desal.set_default_scaling("flow_mass_phase_comp", 1, index=("Liq", "H2O"))
-    m.fs.prop_desal.set_default_scaling("flow_mass_phase_comp", 1e2, index=("Liq", "TDS"))
+    m.fs.prop_desal.set_default_scaling(
+        "flow_mass_phase_comp", 1e2, index=("Liq", "TDS")
+    )
     # set unit model values
     iscale.set_scaling_factor(m.fs.P1.control_volume.work, 1e-3)
     iscale.set_scaling_factor(m.fs.P2.control_volume.work, 1e-3)

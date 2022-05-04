@@ -192,7 +192,9 @@ def build(case="seawater"):
     m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="SO4ION")
     m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="HCO3ION")
     m.fs.prop_desal.set_default_scaling("flow_mass_phase_comp", 1, index=("Liq", "H2O"))
-    m.fs.prop_desal.set_default_scaling("flow_mass_phase_comp", 1e2, index=("Liq", "TDS"))
+    m.fs.prop_desal.set_default_scaling(
+        "flow_mass_phase_comp", 1e2, index=("Liq", "TDS")
+    )
     # set unit model values
     iscale.set_scaling_factor(m.fs.P1.control_volume.work, 1e-3)
     iscale.set_scaling_factor(m.fs.P2.control_volume.work, 1e-3)
