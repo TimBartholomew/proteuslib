@@ -104,10 +104,10 @@ class PropParameterData(PhysicalParameterBlock):
         """Define properties supported and units."""
         obj.add_properties(
             {'flow_mass_comp': {'method': None},
-             'dens_mass': {'method': None},
              'temperature': {'method': None},
              'pressure': {'method': None},
              "mass_frac_comp": {"method": "_mass_frac_comp"},
+             'dens_mass': {'method': '_dens_mass'},
              "flow_vol": {"method": "_flow_vol"},
              "conc_mass_comp": {"method": "_conc_mass_comp"},
              "flow_mol_comp": {"method": "_flow_mol_comp"},
@@ -246,15 +246,6 @@ class PropStateBlockData(StateBlockData):
             units=pyunits.kg/pyunits.s,
             doc='State mass flowrate')
 
-        self.dens_mass = Var(
-            initialize=1000,
-            bounds=(100, 2000),
-            domain=NonNegativeReals,
-            units=pyunits.kg/pyunits.m**3,
-            doc="State density"
-        )
-        self.dens_mass.fix(self.params.dens_mass_default)
-
         self.temperature = Var(
             initialize=298.15,
             bounds=(273.15, 1000),
@@ -288,6 +279,16 @@ class PropStateBlockData(StateBlockData):
         self.eq_mass_frac_comp = Constraint(
             self.params.component_list, rule=rule_mass_frac_comp
         )
+
+    def _dens_mass(self):
+        self.dens_mass = Var(
+            initialize=1000,
+            bounds=(100, 2000),
+            domain=NonNegativeReals,
+            units=pyunits.kg/pyunits.m**3,
+            doc="State density"
+        )
+        self.dens_mass.fix(self.params.dens_mass_default)
 
     def _flow_vol(self):
         self.flow_vol = Var(
@@ -347,7 +348,6 @@ class PropStateBlockData(StateBlockData):
     def define_state_vars(self):
         """Define state vars."""
         return {"flow_mass_comp": self.flow_mass_comp,
-                "dens_mass": self.dens_mass,
                 "temperature": self.temperature,
                 "pressure": self.pressure}
 
