@@ -22,6 +22,7 @@ from pyomo.environ import (
     units as pyunits,
     assert_optimal_termination,
 )
+from pyomo.util.check_units import assert_units_consistent
 from pyomo.network import Arc
 from idaes.core import FlowsheetBlock
 from idaes.core.util import get_solver
@@ -61,6 +62,8 @@ def main(case="seawater"):
 
     # build, set, and initialize
     m = build(case=case)
+    assert_units_consistent(m)
+
     specify_model(m)
     initialize_model(m)
 
@@ -180,10 +183,16 @@ def build(case="seawater"):
 
     # scaling
     # set default property values
+    m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1, index="H2O")
+    m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e2, index="NAION")
+    m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="KION")
+    m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="CAION")
+    m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="MGION")
+    m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e2, index="CLION")
+    m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="SO4ION")
+    m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="HCO3ION")
     m.fs.prop_desal.set_default_scaling("flow_mass_phase_comp", 1, index=("Liq", "H2O"))
-    m.fs.prop_desal.set_default_scaling(
-        "flow_mass_phase_comp", 1e2, index=("Liq", "TDS")
-    )
+    m.fs.prop_desal.set_default_scaling("flow_mass_phase_comp", 1e2, index=("Liq", "TDS"))
     # set unit model values
     iscale.set_scaling_factor(m.fs.P1.control_volume.work, 1e-3)
     iscale.set_scaling_factor(m.fs.P2.control_volume.work, 1e-3)
@@ -197,19 +206,20 @@ def build(case="seawater"):
 
 def set_up_tb_feed_desal(m):
     @m.fs.tb_feed_desal.Constraint()
-    def eq_flow_vol(blk):
+    def eq_flow_mass_H2O(blk):
         return (
-            blk.properties_in[0].flow_vol == blk.properties_out[0].flow_vol_phase["Liq"]
+            blk.properties_in[0].flow_mass_comp["H2O"]
+            == blk.properties_out[0].flow_mass_phase_comp["Liq", "H2O"]
         )
 
     @m.fs.tb_feed_desal.Constraint()
     def eq_flow_mass_TDS(blk):
         return (
             sum(
-                blk.properties_in[0].conc_mass_comp[j]
+                blk.properties_in[0].flow_mass_comp[j]
                 for j in blk.properties_in[0].params.solute_set
             )
-            == blk.properties_out[0].conc_mass_phase_comp["Liq", "TDS"]
+            == blk.properties_out[0].flow_mass_phase_comp["Liq", "TDS"]
         )
 
     @m.fs.tb_feed_desal.Constraint()
@@ -223,19 +233,16 @@ def set_up_tb_feed_desal(m):
 
 def set_up_tb_desal_disposal(m):
     @m.fs.tb_desal_disposal.Constraint()
-    def eq_flow_vol(blk):
+    def eq_flow_mass_H2O(blk):
         return (
-            blk.properties_in[0].flow_vol_phase["Liq"] == blk.properties_out[0].flow_vol
+            blk.properties_in[0].flow_mass_phase_comp["Liq", "H2O"]
+            == blk.properties_out[0].flow_mass_comp["H2O"]
         )
 
     @m.fs.tb_desal_disposal.Constraint(m.fs.prop_feed.solute_set)
     def eq_flow_mass_comp(blk, j):
-        flow_mass_out = (
-            blk.properties_out[0].conc_mass_comp[j] * blk.properties_out[0].flow_vol
-        )
-        flow_mass_in = (
-            m.fs.feed.properties[0].flow_vol * m.fs.feed.properties[0].conc_mass_comp[j]
-        )
+        flow_mass_out = blk.properties_out[0].flow_mass_comp[j]
+        flow_mass_in = m.fs.feed.properties[0].flow_mass_comp[j]
         if j == "NAION":
             flow_mass_in -= (
                 m.fs.product.properties[0].flow_mass_phase_comp["Liq", "TDS"]
@@ -324,6 +331,7 @@ def solve(blk, tee=False):
 
 def initialize_model(m):
 
+    solve(m.fs.feed)
     propagate_state(m.fs.s01)
     flags = fix_state_vars(m.fs.tb_feed_desal.properties_in)
     solve(m.fs.tb_feed_desal)
