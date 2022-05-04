@@ -357,7 +357,7 @@ class PropStateBlockData(StateBlockData):
 
     def get_material_flow_terms(self, p, j):
         """Create material flow terms for control volume."""
-        return self.flow_vol * self.conc_mass_comp[j]
+        return self.flow_mass_comp[j]
 
     # def get_enthalpy_flow_terms(self, p):
     #     """Create enthalpy flow terms."""
