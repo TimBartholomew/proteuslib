@@ -41,6 +41,7 @@ from idaes.generic_models.unit_models.separator import (
 )
 from idaes.generic_models.unit_models.mixer import MomentumMixingType
 import idaes.core.util.scaling as iscale
+from idaes.core.util.math import smooth_min
 import idaes.logger as idaeslog
 
 from watertap.costing import WaterTAPCosting
@@ -105,6 +106,7 @@ def build(case="seawater"):
             "energy_split_basis": EnergySplittingType.equal_temperature,
         }
     )
+    set_up_softening(m)
     m.fs.P1 = Pump(default={"property_package": m.fs.prop_desal})
     m.fs.P2 = Pump(default={"property_package": m.fs.prop_desal})
     m.fs.RO1 = ReverseOsmosis0D(
@@ -197,11 +199,11 @@ def build(case="seawater"):
     # scaling
     # set default property values
     m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1, index="H2O")
-    m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e2, index="NAION")
+    m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="NAION")
     m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="KION")
     m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="CAION")
     m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="MGION")
-    m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e2, index="CLION")
+    m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="CLION")
     m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="SO4ION")
     m.fs.prop_feed.set_default_scaling("flow_mass_comp", 1e3, index="HCO3ION")
     m.fs.prop_desal.set_default_scaling("flow_mass_phase_comp", 1, index=("Liq", "H2O"))
@@ -215,8 +217,23 @@ def build(case="seawater"):
     iscale.set_scaling_factor(m.fs.RO2.area, 1)
     # calculate and propagate scaling factors
     iscale.calculate_scaling_factors(m)
-
     return m
+
+
+def set_up_softening(m):
+    @m.fs.softening.Constraint()
+    def eq_flow_mass_HCO3ION(blk):
+        HCO3_removed_all = blk.mixed_state[0].flow_mol_comp["HCO3ION"]
+        HCO3_removed_calc = 2 * blk.byproduct_state[0].flow_mol_comp["CAION"]
+        blk.eps = Param(initialize=1e-10, units=pyunits.mol/pyunits.s)
+        return (blk.byproduct_state[0].flow_mol_comp["HCO3ION"]
+                == smooth_min(HCO3_removed_all, HCO3_removed_calc, eps=blk.eps))
+
+    @m.fs.softening.Constraint()
+    def eq_flow_mass_CLION(blk):
+        return (blk.byproduct_state[0].flow_mol_comp["CLION"]
+                == 2 * blk.byproduct_state[0].flow_mol_comp["CAION"]
+                - blk.byproduct_state[0].flow_mol_comp["HCO3ION"])
 
 
 def set_up_tb_feed_desal(m):
@@ -257,7 +274,7 @@ def set_up_tb_desal_disposal(m):
     @m.fs.tb_desal_disposal.Constraint(m.fs.prop_feed.solute_set)
     def eq_flow_mass_comp(blk, j):
         flow_mass_out = blk.properties_out[0].flow_mass_comp[j]
-        flow_mass_in = m.fs.feed.properties[0].flow_mass_comp[j]
+        flow_mass_in = m.fs.tb_feed_desal.properties_in[0].flow_mass_comp[j]
         if j == "NAION":
             flow_mass_in -= (
                 m.fs.product.properties[0].flow_mass_phase_comp["Liq", "TDS"]
@@ -282,11 +299,13 @@ def set_up_tb_desal_disposal(m):
 
 
 def specify_model(m):
-
     # ---specifications---
     # softening
-    m.fs.softening.split_fraction[0, "treated", :].fix(1)
-    m.fs.softening.split_fraction[0, "treated", "CAION"].fix(0.5)
+    m.fs.softening.split_fraction[0, "byproduct", :].fix(0)
+    m.fs.softening.split_fraction[0, "byproduct", "CAION"].fix(0)
+    m.fs.softening.split_fraction[0, "byproduct", "H2O"].fix(0.01)  # assumed loss
+    m.fs.softening.split_fraction[0, "byproduct", "HCO3ION"].unfix()
+    m.fs.softening.split_fraction[0, "byproduct", "CLION"].unfix()
 
     # pump 1, 2 degrees of freedom (efficiency and outlet pressure)
     m.fs.P1.efficiency_pump.fix(0.80)  # pump efficiency [-]

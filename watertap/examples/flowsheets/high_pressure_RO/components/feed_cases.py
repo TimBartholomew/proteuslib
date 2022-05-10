@@ -25,8 +25,19 @@ def build_prop(m, case="seawater"):
     """
     if case in ["seawater", "brackish_1", "brackish_2"]:
         ion_list = ["NAION", "KION", "MGION", "CAION", "CLION", "SO4ION", "HCO3ION"]
+        mw_data = {
+            "H2O": 18.02e-3,
+            "NAION": 22.99e-3,
+            "KION": 39.10e-3,
+            "MGION": 24.31e-3,
+            "CAION": 40.08e-3,
+            "CLION": 35.45e-3,
+            "SO4ION": 96.06e-3,
+            "HCO3ION": 61.02e-3
+        }
         m.fs.prop_feed = ion_prop_pack.PropParameterBlock(
-            default={"ion_list": ion_list}
+            default={"ion_list": ion_list,
+                     "mw_data": mw_data}
         )
     else:
         raise ValueError(
