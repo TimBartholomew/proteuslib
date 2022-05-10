@@ -44,12 +44,12 @@ from watertap.unit_models.reverse_osmosis_0D import (
     MassTransferCoefficient,
     PressureChangeType,
 )
-from watertap.unit_models.pump_isothermal import Pump
+from watertap.unit_models.pressure_changer import Pump, EnergyRecoveryDevice
 from watertap.core.util.initialization import (
     assert_degrees_of_freedom,
     assert_no_degrees_of_freedom,
 )
-from watertap.costing import WaterTAPCosting, PumpType
+from watertap.costing import WaterTAPCosting
 import watertap.property_models.NaCl_prop_pack as props
 
 
@@ -109,9 +109,6 @@ def build(number_of_stages=2):
         pump.costing = UnitModelCostingBlock(
             default={"flowsheet_costing_block": m.fs.costing}
         )
-        m.fs.costing.cost_flow(
-            pyunits.convert(pump.work_mechanical[0], to_units=pyunits.kW), "electricity"
-        )
 
     # Add the equalizer pumps
     m.fs.BoosterPumps = Pump(
@@ -120,9 +117,6 @@ def build(number_of_stages=2):
     for pump in m.fs.BoosterPumps.values():
         pump.costing = UnitModelCostingBlock(
             default={"flowsheet_costing_block": m.fs.costing}
-        )
-        m.fs.costing.cost_flow(
-            pyunits.convert(pump.work_mechanical[0], to_units=pyunits.kW), "electricity"
         )
 
     # Add the stages ROs
@@ -142,18 +136,13 @@ def build(number_of_stages=2):
         )
 
     # Add EnergyRecoveryDevice
-    m.fs.EnergyRecoveryDevice = Pump(default={"property_package": m.fs.properties})
+    m.fs.EnergyRecoveryDevice = EnergyRecoveryDevice(
+        default={"property_package": m.fs.properties}
+    )
     m.fs.EnergyRecoveryDevice.costing = UnitModelCostingBlock(
         default={
             "flowsheet_costing_block": m.fs.costing,
-            "costing_method_arguments": {"pump_type": PumpType.energy_recovery_device},
         }
-    )
-    m.fs.costing.cost_flow(
-        pyunits.convert(
-            m.fs.EnergyRecoveryDevice.work_mechanical[0], to_units=pyunits.kW
-        ),
-        "electricity",
     )
 
     # additional variables or expressions
@@ -173,6 +162,7 @@ def build(number_of_stages=2):
     # costing
     m.fs.costing.cost_process()
     product_flow_vol_total = m.fs.product.properties[0].flow_vol
+    m.fs.costing.add_annual_water_production(product_flow_vol_total)
     m.fs.costing.add_LCOW(product_flow_vol_total)
     m.fs.costing.add_specific_energy_consumption(product_flow_vol_total)
 

@@ -44,7 +44,7 @@ from watertap.unit_models.reverse_osmosis_0D import (
     PressureChangeType,
 )
 from watertap.unit_models.pressure_exchanger import PressureExchanger
-from watertap.unit_models.pump_isothermal import Pump
+from watertap.unit_models.pressure_changer import Pump, EnergyRecoveryDevice
 from watertap.core.util.initialization import assert_degrees_of_freedom
 
 from watertap.core.wt_database import Database
@@ -174,7 +174,7 @@ def build(erd_type=None):
         desal.PXR = PressureExchanger(default={"property_package": m.fs.prop_desal})
         desal.P2 = Pump(default={"property_package": m.fs.prop_desal})
     elif erd_type == "pump_as_turbine":
-        desal.ERD = Pump(default={"property_package": m.fs.prop_desal})
+        desal.ERD = EnergyRecoveryDevice(default={"property_package": m.fs.prop_desal})
     else:
         raise ConfigurationError(
             "erd_type was {}, but can only "
@@ -635,7 +635,10 @@ def add_costing(m):
     # RO Train
     # RO equipment is costed using more detailed costing package
     desal.P1.costing = UnitModelCostingBlock(
-        default={"flowsheet_costing_block": m.fs.ro_costing}
+        default={
+            "flowsheet_costing_block": m.fs.ro_costing,
+            "costing_method_arguments": {"cost_electricity_flow": False},
+        }
     )
     desal.RO.costing = UnitModelCostingBlock(
         default={"flowsheet_costing_block": m.fs.ro_costing}
@@ -650,7 +653,10 @@ def add_costing(m):
             default={"flowsheet_costing_block": m.fs.ro_costing}
         )
         desal.P2.costing = UnitModelCostingBlock(
-            default={"flowsheet_costing_block": m.fs.ro_costing}
+            default={
+                "flowsheet_costing_block": m.fs.ro_costing,
+                "costing_method_arguments": {"cost_electricity_flow": False},
+            }
         )
     elif m.erd_type == "pump_as_turbine":
         pass
