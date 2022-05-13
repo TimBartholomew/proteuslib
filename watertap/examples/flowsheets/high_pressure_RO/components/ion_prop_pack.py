@@ -304,6 +304,7 @@ class PropStateBlockData(StateBlockData):
             self.params.component_list,
             initialize=0.1,
             bounds=(0, None),
+            domain=NonNegativeReals,
             units=pyunits.dimensionless,
             doc="Mass fraction",
         )
@@ -331,6 +332,7 @@ class PropStateBlockData(StateBlockData):
         self.flow_vol = Var(
             initialize=1e-3,
             bounds=(0, None),
+            domain=NonNegativeReals,
             units=pyunits.m**3 / pyunits.s,
             doc="Volumetric flow rate",
         )
@@ -348,6 +350,7 @@ class PropStateBlockData(StateBlockData):
         self.conc_mass_comp = Var(
             self.params.component_list,
             initialize=10,
+            domain=NonNegativeReals,
             bounds=(0, 1e6),
             units=pyunits.kg * pyunits.m**-3,
             doc="Mass concentration",
@@ -365,6 +368,7 @@ class PropStateBlockData(StateBlockData):
             self.params.component_list,
             initialize=100,
             bounds=(0, None),
+            domain=NonNegativeReals,
             units=pyunits.mol / pyunits.s,
             doc="Molar flowrate",
         )

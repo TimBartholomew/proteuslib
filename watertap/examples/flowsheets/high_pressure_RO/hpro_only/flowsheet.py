@@ -47,7 +47,7 @@ from watertap.unit_models.reverse_osmosis_0D import (
     MassTransferCoefficient,
     PressureChangeType,
 )
-from watertap.unit_models.pump_isothermal import Pump
+from watertap.unit_models.pressure_changer import Pump
 from watertap.core.util.initialization import assert_degrees_of_freedom
 from watertap.examples.flowsheets.full_treatment_train.util import solve_block
 import watertap.examples.flowsheets.high_pressure_RO.components.feed_cases as feed_cases
