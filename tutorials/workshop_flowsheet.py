@@ -111,6 +111,9 @@ def main():
     initialize_system(m)
 
     # simulate and display
+    solver = get_solver()
+    solver.solve(m, tee=True)
+    assert False
     solve(m)
     print("\n***---Simulation results---***")
     display_results(m)
