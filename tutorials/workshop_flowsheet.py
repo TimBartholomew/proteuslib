@@ -113,29 +113,20 @@ def main():
     # simulate and display
     solve(m)
     print("\n***---Simulation results---***")
-    display_system(m)
-    display_design(m)
-    display_state(m)
-    print(display_ui_output(m))
+    display_results(m)
 
     # optimize and display
     optimize_set_up(m)
     assert_units_consistent(m)
     optimize(m)
     print("\n***---Optimization results---***")
-    display_system(m)
-    display_design(m)
-    display_state(m)
+    display_results(m)
 
     # change one parameter and see effect
     m.fs.costing.reverse_osmosis_membrane_cost.fix(60)
     optimize(m)
     print("\n***---Parameter change results---***")
-    display_system(m)
-    display_design(m)
-    display_state(m)
-    print(display_ui_input(m))
-    print(display_ui_output(m))
+    display_results(m)
 
 
 def build():
@@ -638,6 +629,50 @@ def export_ui_variables(fs):
             },
         },
     )
+
+
+def display_results(m):
+    print("----------system metrics----------")
+    print("Recovery: %.1f %%" % (value(m.fs.RO.recovery_vol_phase[0, "Liq"])*100))
+    print("Specific energy: %.2f $/m3" % value(m.fs.costing.specific_energy_consumption))
+    print("Levelized cost of water: %.2f $/m3" % value(m.fs.costing.LCOW))
+
+    print("\n----------inlet and outlets----------")
+    print("Feed: %.2f m3/h, %.0f ppm" %
+          (value(units.convert(m.fs.feed.properties[0].flow_vol_phase["Liq"],
+                               to_units=units.m ** 3 / units.hr)),
+           value(m.fs.feed.properties[0].mass_frac_phase_comp["Liq", "TDS"]) * 1e6))
+    print("Product: %.2f m3/h, %.0f ppm" %
+          (value(units.convert(m.fs.product.properties[0].flow_vol_phase["Liq"],
+                               to_units=units.m ** 3 / units.hr)),
+           value(m.fs.product.properties[0].mass_frac_phase_comp["Liq", "TDS"]) * 1e6))
+    print("Disposal: %.2f m3/h, %.0f ppm" %
+          (value(units.convert(m.fs.disposal.properties[0].flow_vol_phase["Liq"],
+                               to_units=units.m ** 3 / units.hr)),
+           value(m.fs.disposal.properties[0].mass_frac_phase_comp["Liq", "TDS"]) * 1e6))
+
+    print("\n----------decision variables----------")
+    print("Operating pressure: %.1f bar" %
+          (value(units.convert(m.fs.pump.control_volume.properties_out[0].pressure,
+                               to_units=units.bar))))
+    print("Membrane area: %.1f m2" % value(m.fs.RO.area))
+    print("Inlet crossflow velocity: %.1f cm/s" %
+          (value(units.convert(m.fs.RO.velocity[0, 0],
+                               to_units=units.cm / units.s))))
+
+    print("\n----------system variables----------")
+    print("Pump power: %.1f kW" %
+          (value(units.convert(m.fs.pump.work_mechanical[0], to_units=units.kW))))
+    print("ERD power: %.1f kW" %
+          (-value(units.convert(m.fs.erd.work_mechanical[0], to_units=units.kW))))
+    print("Average water flux: %.1f L/(m2-h)" %
+          value(units.convert(m.fs.RO.flux_mass_phase_comp_avg[0, "Liq", "H2O"]
+                              / (1000 * units.kg / units.m ** 3),
+                              to_units=units.mm / units.hr)))
+    print("Pressure drop: %.1f bar" %
+          (-value(units.convert(m.fs.RO.deltaP[0],to_units=units.bar))))
+    print("Maximum interfacial salinity: %.0f ppm" %
+          (value(m.fs.RO.feed_side.properties_interface[0, 1].mass_frac_phase_comp["Liq", "TDS"])*1e6))
 
 
 def display_ui_input(m):
