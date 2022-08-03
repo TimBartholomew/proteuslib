@@ -68,6 +68,8 @@ def main():
     display_metrics_results(m)
     display_additional_results(m)
 
+    m.fs.costing.display()
+
     return m, results
 
 
@@ -746,6 +748,83 @@ def display_additional_results(m):
     print(f"Hydrogen revenue: {hydrogen_revenue:.1f} $/year")
     methane_revenue = value(-(m.fs.costing.aggregate_flow_costs["methane_product"]))
     print(f"Methane revenue: {methane_revenue:.1f} $/year")
+
+def flowsheet_gui_interface(fs):
+    class InputCategory:
+        """Names for input categories"""
+        feed = "Feed"
+        hydrogen = "Hydrogen reactor"
+        methane = "Methane reactor"
+        system = "System parameters"
+
+    class OutputCategory:
+        """Names for input categories"""
+        feed = "Feed"
+        levelized_costs = "Levelized costs"
+        normalized_costs = "Normalized costs"
+        normalized_performance = "Normalized performance"
+        product = "Product"
+        capital_cost = "Capital cost"
+        operating_cost = "Operating cost"
+        revenue = "Revenue"
+
+    gui_export_object(
+        fs.feed.conc_mass_comp[0, "cod"],
+        display_name="COD concentration",
+        gui_units=pyunits.g / pyunits.L,
+        display_units="g/L",
+        display_rounding=1e-2,  # round to nearest 0.01
+        description="COD concentration for the feed",
+        # scale_value=1,  # no scaling needed
+        is_input=True,
+        input_category=InputCategory.feed,
+        read_only=False,  # I'm not sure whether we should make default be true or false, its only applicable to inputs
+        is_output=True,
+        output_category=OutputCategory.feed
+    )
+    gui_export_object(
+        fs.feed.flow_vol[0],
+        display_name="Flowrate",
+        gui_units=pyunits.m ** 3 / pyunits.hr,
+        display_units="m3/h",
+        display_rounding=1e-2,  # round to nearest 0.01
+        description="Volumetric flowrate for the feed",
+        # scale_value=1,  # no scaling needed
+        is_input=True,
+        input_category=InputCategory.feed,
+        read_only=False,
+        is_output=True,
+        output_category=OutputCategory.feed
+    )
+    gui_export_object(
+        fs.costing.utilization_factor,
+        display_name="Utilization factor",
+        # gui_units=pyunits.get_units(fs.costing.utilization_factor),  # same as the variable, which is pyunits.dimensionless
+        display_units="%",
+        display_rounding=1e-1,  # round to nearest 0.1
+        description="Utilization factor is defined as the annual use hours/the total hours in a year, also"
+                    "commonly called capacity factor or load factor",
+        scale_value=100,  # scaling needed for percentage
+        is_input=True,
+        input_category=InputCategory.system,
+        read_only=False,
+        is_output=False,
+        # output_category=None,
+    )
+    gui_export_object(
+        fs.costing.LCOW,
+        display_name="Levelized cost of water",
+        # gui_units=pyunits.get_units(fs.costing.LCOW),  # same as the variable, which is m.fs.costing.base_currency / pyunits.m**3
+        display_units="$/m3",
+        display_rounding=1e-1,  # round to nearest 0.1
+        description="Levelized cost of water is the annualized capital and operating cost divided by the annual water production",
+        # scale_value=1,  # no scaling
+        is_input=False,
+        # input_category=None,
+        # read_only=True,
+        is_output=True,
+        output_category=OutputCategory.levelized_costs
+    )
 
 
 if __name__ == "__main__":
